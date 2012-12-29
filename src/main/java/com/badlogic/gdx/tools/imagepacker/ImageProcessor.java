@@ -18,10 +18,13 @@ package com.badlogic.gdx.tools.imagepacker;
 
 import java.awt.image.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.*;
 import java.util.*;
+import java.util.logging.*;
 
 import javax.imageio.ImageIO;
 
@@ -43,19 +46,24 @@ public class ImageProcessor {
         this.settings = settings;
     }
 
-    public void addImage(Path file) {
+    public void addImage(Path p) {
+        try {
+            addImage(Files.newInputStream(p), p.toString());
+        } catch (IOException ex) {
+            throw new RuntimeException("Error reading image: " + p.toString(), ex);
+        }
+    }
+    
+    public void addImage(InputStream in, String name) {
         BufferedImage image;
         try {
-            image = ImageIO.read(file.toFile());
+            image = ImageIO.read(in);
         } catch (IOException ex) {
-            throw new RuntimeException("Error reading image: " + file, ex);
+            throw new RuntimeException("Error reading image: " + name, ex);
         }
         if (image == null) {
-            throw new RuntimeException("Unable to read image: " + file);
+            throw new RuntimeException("Unable to read image: " + name);
         }
-
-        // Strip root dir off front of image path.
-        String name = file.toString();
 
         Rect rect = createRect(image);
         if (rect == null) {

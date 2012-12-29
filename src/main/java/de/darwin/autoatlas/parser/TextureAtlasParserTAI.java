@@ -18,6 +18,7 @@ package de.darwin.autoatlas.parser;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -81,6 +82,7 @@ public class TextureAtlasParserTAI implements TextureAtlasParser {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(o))) {
             Map<BufferedImage, String> files = new HashMap<>();
             int fileIndex = 0;
+            
             for (TextureAtlasElement element : atlas) {
                 String file = files.get(element.base);
                 if (file == null) {
@@ -95,7 +97,13 @@ public class TextureAtlasParserTAI implements TextureAtlasParser {
 //# <filename>        <atlas filename>, <atlas idx>, <atlas type>, <woffset>, <hoffset>, <depth offset>, <width>, <height>
                 writer.append(element.name);
                 writer.append("\t\t");
-                writer.append(file);
+                Path get = Paths.get(name);
+                String relativeFile = file;
+                if(get.getParent() != null)
+                {
+                    relativeFile = get.getParent().relativize(Paths.get(file)).toString();
+                }
+                writer.append(relativeFile);
                 writer.append(", 0, 2D, ");
                 writer.append(Integer.toString(Math.round(element.woffset)));
                 writer.append(", ");

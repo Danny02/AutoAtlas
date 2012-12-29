@@ -29,6 +29,7 @@ public class TextureAtlasElement {
     public final float woffset, hoffset, width, heigth;
     public final String name;
     public final BufferedImage base;
+    private BufferedImage sub;
 
     public TextureAtlasElement(float woffset, float hoffset, float width, float heigth, String name, BufferedImage base) {
         this.woffset = woffset;
@@ -48,8 +49,11 @@ public class TextureAtlasElement {
     }
 
     public BufferedImage getSubImage() {
-        return base.getSubimage(Math.round(woffset), Math.round(hoffset),
-                                Math.round(width), Math.round(heigth));
+        if (sub == null) {
+            sub = base.getSubimage(Math.round(woffset), Math.round(hoffset),
+                                   Math.round(width), Math.round(heigth));
+        }
+        return sub;
     }
 
     @Override

@@ -39,6 +39,7 @@ import de.darwin.autoatlas.parser.*;
  */
 @ServiceProvider(ResourceProcessor.class)
 public class AtlasProducer implements ResourceProcessor {
+    public static final String ATLAS_FILENAME = "resources/atlas";
 
     @Override
     public void process(Iterable<ResourceTupel> resource, FilerFactory filer) {
@@ -51,20 +52,24 @@ public class AtlasProducer implements ResourceProcessor {
         
         for (ResourceTupel tu : resource) {
             try {
-                proc.addImage(Paths.get("src/main/resources/").resolve(tu.path));
+                String name = tu.path.toString();
+                proc.addImage(filer.readRelative(tu.path.toString()), name);
+                filer.delete(name);
             } catch (Throwable ex) {
                 ex.printStackTrace();
             }
         }
 
-        List<Page> pages = packer.pack(proc.getImages());
-        TextureAtlas atlas = createAtlas(pages, set);
-        saveAtlas(atlas, filer);
+        if (proc.getImages().size() > 0) {
+            List<Page> pages = packer.pack(proc.getImages());
+            TextureAtlas atlas = createAtlas(pages, set);
+            saveAtlas(atlas, filer);
+        }
     }
 
     @Override
     public Class[] supportedResourceTypes() {
-        return new Class[]{Image.class};
+        return new Class[]{TextureAtlasElement.class};
     }
 
     @Override
@@ -155,7 +160,7 @@ public class AtlasProducer implements ResourceProcessor {
     private void saveAtlas(TextureAtlas atlas, FilerFactory filer) {
         try {
             TextureAtlasParser parser = new TextureAtlasParserTAI();
-            parser.writeAtlas(filer, atlas, "atlas");
+            parser.writeAtlas(filer, atlas, ATLAS_FILENAME);
         } catch (IOException ex) {
             Throw.unchecked(ex);
         }
