@@ -20,12 +20,12 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.*;
 import java.util.List;
 
 import darwin.annotations.ServiceProvider;
-import darwin.resourcehandling.ResourceProcessor;
-import darwin.resourcehandling.UsedResourceProcessor.ResourceTupel;
-import darwin.resourcehandling.relative.FilerFactory;
+import darwin.resourcehandling.*;
+import darwin.resourcehandling.relative.RelativeFileFactory;
 import darwin.util.misc.Throw;
 
 import com.badlogic.gdx.math.MathUtils;
@@ -42,7 +42,7 @@ public class AtlasProducer implements ResourceProcessor {
     public static final String ATLAS_FILENAME = "resources/atlas";
 
     @Override
-    public void process(Iterable<ResourceTupel> resource, FilerFactory filer) {
+    public Collection<ResourceTupel> process(Collection<ResourceTupel> resource, RelativeFileFactory filer) {
         Settings set = new Settings();
         set.maxHeight = 2048;
         set.maxWidth = 2048;
@@ -54,7 +54,6 @@ public class AtlasProducer implements ResourceProcessor {
             try {
                 String name = tu.path.toString();
                 proc.addImage(filer.readRelative(tu.path.toString()), name);
-                filer.delete(name);
             } catch (Throwable ex) {
                 ex.printStackTrace();
             }
@@ -65,6 +64,8 @@ public class AtlasProducer implements ResourceProcessor {
             TextureAtlas atlas = createAtlas(pages, set);
             saveAtlas(atlas, filer);
         }
+        
+        return resource;
     }
 
     @Override
@@ -157,7 +158,7 @@ public class AtlasProducer implements ResourceProcessor {
         return builder.create();
     }
 
-    private void saveAtlas(TextureAtlas atlas, FilerFactory filer) {
+    private void saveAtlas(TextureAtlas atlas, RelativeFileFactory filer) {
         try {
             TextureAtlasParser parser = new TextureAtlasParserTAI();
             parser.writeAtlas(filer, atlas, ATLAS_FILENAME);

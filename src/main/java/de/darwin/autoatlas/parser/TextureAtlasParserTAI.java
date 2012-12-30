@@ -22,8 +22,11 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.Map.Entry;
 
-import darwin.resourcehandling.handle.ResourceHandle;
+import darwin.annotations.ServiceProvider;
+import darwin.resourcehandling.ResourceDependecyInspector;
+import darwin.resourcehandling.handle.*;
 import darwin.resourcehandling.relative.RelativeFileFactory;
+import darwin.util.misc.Throw;
 
 import de.darwin.autoatlas.TextureAtlas.Builder;
 import de.darwin.autoatlas.TextureAtlas.Builder.Page;
@@ -34,10 +37,84 @@ import javax.imageio.ImageIO;
  *
  * @author Daniel Heinrich <dannynullzwo@gmail.com>
  */
-public class TextureAtlasParserTAI implements TextureAtlasParser {
+@ServiceProvider(ResourceDependecyInspector.class)
+public class TextureAtlasParserTAI extends ResourceDependecyInspector implements TextureAtlasParser {
+
+    public TextureAtlasParserTAI() {
+        super(TextureAtlas.class);
+    }
 
     @Override
     public TextureAtlas parseAtlas(ResourceHandle in) throws IOException {
+        Builder builder = TextureAtlas.build();
+        for (Entry<ResourceHandle, List<String[]>> entry : parseElements(in).entrySet()) {
+            Page page = builder.nextPage(ImageIO.read(entry.getKey().getStream()));
+            for (String[] data : entry.getValue()) {
+                page.addElement(data[0], Float.parseFloat(data[1].trim()),
+                                Float.parseFloat(data[2].trim()),
+                                Float.parseFloat(data[3].trim()),
+                                Float.parseFloat(data[4].trim()));
+            }
+        }
+
+        return builder.create();
+    }
+
+    @Override
+    public void writeAtlas(RelativeFileFactory factory, TextureAtlas atlas, String name) throws IOException {
+        OutputStream o = factory.writeRelative(name + ".tai");
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(o))) {
+            Map<BufferedImage, String> files = new HashMap<>();
+            int fileIndex = 0;
+
+            for (TextureAtlasElement element : atlas) {
+                String file = files.get(element.base);
+                if (file == null) {
+                    boolean alpha = element.base.getColorModel().hasAlpha();
+                    String format = alpha ? "png" : "jpg";
+                    file = name + "/page" + fileIndex + '.' + format;
+                    OutputStream image = factory.writeRelative(file);
+                    ImageIO.write(element.base, format, image);
+                    files.put(element.base, file);
+                }
+
+//# <filename>        <atlas filename>, <atlas idx>, <atlas type>, <woffset>, <hoffset>, <depth offset>, <width>, <height>
+                writer.append(element.name);
+                writer.append("\t\t");
+                Path get = Paths.get(name);
+                String relativeFile = file;
+                if (get.getParent() != null) {
+                    relativeFile = get.getParent().relativize(Paths.get(file)).toString();
+                }
+                writer.append(relativeFile);
+                writer.append(", 0, 2D, ");
+                writer.append(Integer.toString(Math.round(element.woffset)));
+                writer.append(", ");
+                writer.append(Integer.toString(Math.round(element.hoffset)));
+                writer.append(", 0, ");
+                writer.append(Integer.toString(Math.round(element.width)));
+                writer.append(", ");
+                writer.append(Integer.toString(Math.round(element.heigth)));
+                writer.newLine();
+            }
+        }
+    }
+
+    @Override
+    public Iterable<Path> getDependencys(ClasspathFileHandler resource) {
+        try {
+            List<Path> p = new ArrayList<>();
+            for (ResourceHandle handle : parseElements(resource).keySet()) {
+                p.add(((ClasspathFileHandler) handle).getPath());
+            }
+            return p;
+        } catch (IOException ex) {
+            Throw.unchecked(ex);
+            return null;//unreachable
+        }
+    }
+
+    private Map<ResourceHandle, List<String[]>> parseElements(ResourceHandle in) throws IOException {
         Map<ResourceHandle, List<String[]>> pages = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(in.getStream()))) {
             String line;
@@ -61,59 +138,6 @@ public class TextureAtlasParserTAI implements TextureAtlasParser {
                 l.add(new String[]{name[0], eles[3], eles[4], eles[6], eles[7]});
             }
         }
-
-        Builder builder = TextureAtlas.build();
-        for (Entry<ResourceHandle, List<String[]>> entry : pages.entrySet()) {
-            Page page = builder.nextPage(ImageIO.read(entry.getKey().getStream()));
-            for (String[] data : entry.getValue()) {
-                page.addElement(data[0], Float.parseFloat(data[1].trim()),
-                                Float.parseFloat(data[2].trim()),
-                                Float.parseFloat(data[3].trim()),
-                                Float.parseFloat(data[4].trim()));
-            }
-        }
-
-        return builder.create();
-    }
-
-    @Override
-    public void writeAtlas(RelativeFileFactory factory, TextureAtlas atlas, String name) throws IOException {
-        OutputStream o = factory.writeRelative(name + ".tai");
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(o))) {
-            Map<BufferedImage, String> files = new HashMap<>();
-            int fileIndex = 0;
-            
-            for (TextureAtlasElement element : atlas) {
-                String file = files.get(element.base);
-                if (file == null) {
-                    boolean alpha = element.base.getColorModel().hasAlpha();
-                    String format = alpha ? "png" : "jpg";
-                    file = name + "/page" + fileIndex + '.' + format;
-                    OutputStream image = factory.writeRelative(file);
-                    ImageIO.write(element.base, format, image);
-                    files.put(element.base, file);
-                }
-
-//# <filename>        <atlas filename>, <atlas idx>, <atlas type>, <woffset>, <hoffset>, <depth offset>, <width>, <height>
-                writer.append(element.name);
-                writer.append("\t\t");
-                Path get = Paths.get(name);
-                String relativeFile = file;
-                if(get.getParent() != null)
-                {
-                    relativeFile = get.getParent().relativize(Paths.get(file)).toString();
-                }
-                writer.append(relativeFile);
-                writer.append(", 0, 2D, ");
-                writer.append(Integer.toString(Math.round(element.woffset)));
-                writer.append(", ");
-                writer.append(Integer.toString(Math.round(element.hoffset)));
-                writer.append(", 0, ");
-                writer.append(Integer.toString(Math.round(element.width)));
-                writer.append(", ");
-                writer.append(Integer.toString(Math.round(element.heigth)));
-                writer.newLine();
-            }
-        }
+        return pages;
     }
 }

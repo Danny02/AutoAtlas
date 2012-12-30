@@ -19,11 +19,9 @@ package de.darwin.autoatlas;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.logging.*;
 
 import darwin.annotations.ServiceProvider;
-import darwin.resourcehandling.factory.ResourceFromHandle;
-import darwin.resourcehandling.factory.ResourceFromHandleProvider;
+import darwin.resourcehandling.factory.*;
 import darwin.resourcehandling.handle.*;
 import darwin.util.misc.Throw;
 
@@ -37,10 +35,11 @@ import de.darwin.autoatlas.parser.TextureAtlasParserTAI;
 public class AtlasElementLoader extends ResourceFromHandleProvider<TextureAtlasElement>
         implements ResourceFromHandle<TextureAtlasElement> {
 
+    private TextureAtlas atlas;
+
     public AtlasElementLoader() {
         super(TextureAtlasElement.class);
     }
-    private TextureAtlas atlas;
 
     @Override
     public TextureAtlasElement create(ResourceHandle handle) throws IOException {
