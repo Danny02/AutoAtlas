@@ -4,10 +4,17 @@
 
     <groupId>com.github.danny02</groupId>
     <artifactId>AutoAtlas</artifactId>
-    <version>1.0</version>
+    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>AutoAtlas</name>  
+    <name>AutoAtlas</name> 
+    <description>Automatic texture atlas creation plugin for DarwinsBox: Resource Managment</description>
+    <url>https://github.com/${github.project}</url> 
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <github.project>Danny02/AutoAtlas</github.project>
+    </properties>
   
     <licenses>
         <license>
@@ -15,6 +22,17 @@
             <url>http://www.gnu.org/licenses/gpl-3.0.html</url>
         </license>
     </licenses>
+
+    <issueManagement>
+        <url>${project.url}/issues</url>
+        <system>GitHub Issues</system>
+    </issueManagement>
+    
+    <scm>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
+        <url>git@github.com:${github.project}.git</url>
+    </scm>
 
     <developers>
         <developer>
@@ -25,7 +43,6 @@
         </developer>
     </developers>
     
-    <url>http://maven.apache.org</url>
     <build>
         <plugins>
             <plugin>
@@ -59,9 +76,6 @@
             </plugin>	
         </plugins>
     </build>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
     <dependencies>
         <dependency>
